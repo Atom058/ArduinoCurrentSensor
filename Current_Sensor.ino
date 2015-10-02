@@ -1,4 +1,4 @@
-#include "SevSeg.h"
+#include "SevenSeg.h"
 
 /* 
 
@@ -40,7 +40,20 @@ const int highBreakpoint = 109;
 
 
 //Object instantiation
-SevSeg display;
+//Display
+/* Pins same as the pin number on display, except 1 (E) >> 12
+  a:    10
+  b:    6
+  c:    4
+  d:    2
+  e:    12
+  f:    9
+  g:    5
+  dp:   3
+*/
+SevenSeg display( 10, 6, 4, 2, 12, 9, 5 );
+const int numDigits = 3;
+int digitalPins[numDigits] = { 11, 8, 7 };
 
 //variables
 float current = 0;
@@ -50,12 +63,8 @@ void setup() {
   analogReference(EXTERNAL);
 
   //Display
-  byte numDigits = 3;
-  byte digitPins[] = {11, 8, 7};
-  //Pins same as the pin number on display, except 1 (E) >> 12
-  byte segmentPins[] = {10, 6, 4, 2, 12, 9, 5, 3}; 
-  display.begin(COMMON_ANODE, numDigits, digitPins, segmentPins);
-  display.setBrightness(100);
+  display.setDigitPins(numDigits, digitalPins);
+  display.setDPPin(3);
 
   Serial.begin(9600);
 }
@@ -94,20 +103,19 @@ void loop() {
   float convertedCurrent = ( current/1024 ) * maxVoltage;
   convertedCurrent *= 1000; //Convert from A to mA
   Serial.print("Output current: "); Serial.print(convertedCurrent); Serial.println(" mA");
-  if( convertedCurrent < 10 ){
-  	display.setNumber(convertedCurrent, 2);
-  } else if( convertedCurrent < 100 ){
-    display.setNumber(convertedCurrent, 1);
-  } else if (convertedCurrent < 999 ) {
-    display.setNumber(convertedCurrent, 0);
-  } else {
-  	
-  }
+  if( convertedCurrent >= 1000 ) {
 
-  //Update display
-  unsigned long time = millis();
-  while(time + refresh_rate >= millis()) {
-  	display.refreshDisplay();
+    char displayText[4];
+    int digitOne = convertedCurrent/1000;
+    int digitTwo = ( (int)convertedCurrent % 1000 ) / 100;
+    displayText[0] = digitOne;
+    displayText[1] = '.';
+    displayText[2] = digitTwo;
+    displayText[4] = 'A';
+    display.write(displayText);
+
+  } else {
+    display.write(convertedCurrent);
   }
 
 }
