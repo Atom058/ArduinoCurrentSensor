@@ -66,25 +66,29 @@ void setup() {
   display.setDigitPins(numDigits, digitalPins);
   display.setDPPin(3);
 
+  display.setTimer(2);
+  display.startTimer();
+
   Serial.begin(9600);
 }
 
 void loop() {
+
   Serial.println();
   
   current = analogRead(current_sensor);
-  Serial.print("Base reading"); Serial.println(current);
+  Serial.print("Base reading "); Serial.println(current);
 
   if( current < mediumBreakpoint ){
   	//Switch to 10x mode if reading is at 118.9mV approximately
 
   	current = analogRead(current_sensor_medium_amp);
-    Serial.print("Medium amp reading"); Serial.println(current);
+    Serial.print("Medium amp reading "); Serial.println(current);
 
   	if( current < highBreakpoint ) {
   		//Switch to 100x mode if reading is at 
   		current = analogRead(current_sensor_high_amp);
-      Serial.print("High amp reading"); Serial.println(current);
+      Serial.print("High amp reading "); Serial.println(current);
   		amplification = getHighAmplification(current);
 
   	} else{
@@ -100,21 +104,30 @@ void loop() {
 
   //Convert to miliamps
   float maxVoltage = voltage_reference / ( resistor_value * amplification);
-  float convertedCurrent = ( current/1024 ) * maxVoltage;
+  double convertedCurrent = ( current/1024 ) * maxVoltage;
   convertedCurrent *= 1000; //Convert from A to mA
   Serial.print("Output current: "); Serial.print(convertedCurrent); Serial.println(" mA");
   if( convertedCurrent >= 1000 ) {
-
-    char displayText[4];
+    /*
     int digitOne = convertedCurrent/1000;
     int digitTwo = ( (int)convertedCurrent % 1000 ) / 100;
-    displayText[0] = digitOne;
-    displayText[1] = '.';
-    displayText[2] = digitTwo;
-    displayText[4] = 'A';
-    display.write(displayText);
+    char displayText[] = { '1', '.', '2', 'A', '\0' };
 
-  } else {
+    Serial.println(displayText);*/
+    //Something wacky is going on with the display driver, so I'll bypass this
+    if( convertedCurrent < 1100 ){
+      display.write("1.0A");
+    } else if( convertedCurrent < 1200 ) {
+      display.write("1.1A");
+    } else if( convertedCurrent >= 1023 ) {
+      display.write("Err");
+    } else {
+      display.write("1.2A");
+    }
+
+  } else if( convertedCurrent == 0 ){
+    display.write("NCu");
+  }else {
     display.write(convertedCurrent);
   }
 
@@ -136,3 +149,8 @@ float getHighAmplification(float current) {
 	return 50;
 
 }
+
+ISR(TIMER2_COMPA_vect){
+  display.interruptAction();
+}
+
