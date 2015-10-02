@@ -98,8 +98,10 @@ void loop() {
   	display.setNumber(convertedCurrent, 2);
   } else if( convertedCurrent < 100 ){
     display.setNumber(convertedCurrent, 1);
-  } else {
+  } else if (convertedCurrent < 999 ) {
     display.setNumber(convertedCurrent, 0);
+  } else {
+  	
   }
 
   //Update display
