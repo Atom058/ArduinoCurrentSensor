@@ -40,14 +40,24 @@ const unsigned long refresh_rate = 100; //How often the measurement is taken
 const int mediumBreakpoint = 88;
 const int highBreakpoint = 109;
 
-//Calibration data. Absolute values is in mA
-const float noAmpAbsError = -0.0030333;
+
+/* Calibration data
+	
+	Each reading is calibrated according to a linera function:
+		y = ax +b, where x = reading and y = target
+
+*/
+const float noAmpA = 0.00108285451;
+const float noAmpB = -0.013783994333;
 
 const float mediumAmplification = 11;
-const float	mediumAmpAbsError = 0.00305;
+const float mediumAmpA = 0.000917541660;
+const float mediumAmpB = 0.006843216990;
+
 
 const float highAmplification = 50;
-const float	highAmpAbsError = 0.0014927;
+const float highAmpA = 0.001035374060;
+const float highAmpB = 0.001344642533;
 
 //Display
 /* Pins same as the pin number on display, except 1 (E) >> 12
@@ -68,7 +78,8 @@ int digitalPins[numDigits] = { 11, 8, 7 };
 float current = 0;
 double convertedCurrent = 0;
 int amplification = 0;
-float absoluteErrorCorrection = 0;
+float linearErrorCorrectionA = 0;
+float linearErrorCorrectionB = 0;
 
 
 
@@ -111,29 +122,37 @@ void readCurrent(){
 	//Switch to 10x mode if reading is at 118.9mV approximately
 
 		current = analogRead(current_sensor_medium_amp);
-		absoluteErrorCorrection = mediumAmpAbsError;
+
 		Serial.print("Medium amp reading "); Serial.println(current);
 
 		if( current < highBreakpoint ) {
 		//Switch to 100x mode if reading is at 
 			current = analogRead(current_sensor_high_amp);
 			Serial.print("High amp reading "); Serial.println(current);
-			absoluteErrorCorrection = highAmpAbsError;
-			amplification = getHighAmplification(current);
+			linearErrorCorrectionA = highAmpA;
+			linearErrorCorrectionB = highAmpB;
+			amplification = highAmplification;
 
 		} else{
-		//Set amplifiaction for 10x
-			amplification = getMediumAmplification(current);
+			
+			//Set amplifiaction for 10x
+			amplification = mediumAmplification;
+			linearErrorCorrectionA = mediumAmpA;
+			linearErrorCorrectionB = mediumAmpB;
+
 		}
 
 	} else {
 
 		amplification = 1;
-		absoluteErrorCorrection = noAmpAbsError;
+		linearErrorCorrectionA = noAmpA;
+		linearErrorCorrectionB = noAmpB;
 
 	}
 
 }
+
+
 
 void convertCurrentReadingToMilliamps(){
 
@@ -141,12 +160,15 @@ void convertCurrentReadingToMilliamps(){
 	float maxVoltage = voltage_reference / ( resistor_value * amplification);
 
 	//Convert the relative voltage reading to a milliamps readout
-	convertedCurrent = ( current/1024 ) * maxVoltage - absoluteErrorCorrection;
+	convertedCurrent = ( current/1024 ) * maxVoltage;
+	//Apply linear correction function
+	convertedCurrent = convertedCurrent * linearErrorCorrectionA + linearErrorCorrectionB;
 
 	//Convert from A to mA
 	convertedCurrent *= 1000; 
 	
 }
+
 
 
 void displayCurrent(){
@@ -177,27 +199,6 @@ void displayCurrent(){
 	} else {
 		display.write(convertedCurrent);
 	}
-
-}
-
-
-
-/*
-
-Should be measured
-
-*/
-float getMediumAmplification(float current) {
-
-	return 11;
-
-}
-
-
-
-float getHighAmplification(float current) {
-
-	return 50;
 
 }
 
