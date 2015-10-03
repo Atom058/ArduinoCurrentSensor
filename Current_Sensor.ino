@@ -47,17 +47,17 @@ const int highBreakpoint = 109;
 		y = ax +b, where x = reading and y = target
 
 */
-const float noAmpA = 0.00108285451;
-const float noAmpB = -0.013783994333;
+const float noAmpA = 1.08285451;
+const float noAmpB = -0.007717327667;
 
 const float mediumAmplification = 11;
-const float mediumAmpA = 0.000917541660;
-const float mediumAmpB = 0.006843216990;
+const float mediumAmpA = 0.917541660;
+const float mediumAmpB = 0.00074321699;
 
 
 const float highAmplification = 50;
-const float highAmpA = 0.001035374060;
-const float highAmpB = 0.001344642533;
+const float highAmpA = 1.035374060;
+const float highAmpB = 0.001640684133;
 
 //Display
 /* Pins same as the pin number on display, except 1 (E) >> 12
