@@ -30,8 +30,8 @@
 const float voltage_reference = 1.218; //The supplied reference voltage
 const float resistor_value = 1.0; //The value of the sense resistor
 const int current_sensor = 0; //The current sensing pin
-const int current_sensor_medium_amp = 1;
-const int current_sensor_high_amp = 2;
+const int current_sensor_medium_amp = 2;
+const int current_sensor_high_amp = 1;
 const unsigned long refresh_rate = 100; //How often the measurement is taken
 
 //For amplification
@@ -75,9 +75,10 @@ void setup() {
 void loop() {
 
   Serial.println();
+  delay(500);
   
   current = analogRead(current_sensor);
-  Serial.print("Base reading "); Serial.println(current);
+  Serial.print("Base reading "); Serial.print(current); Serial.print(", ~"); Serial.print( ( ( current / 1024 ) * voltage_reference * 1000 ) ); Serial.println("mA");
 
   if( current < mediumBreakpoint ){
   	//Switch to 10x mode if reading is at 118.9mV approximately
