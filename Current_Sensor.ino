@@ -66,6 +66,7 @@ int digitalPins[numDigits] = { 11, 8, 7 };
 
 //variables
 float current = 0;
+double convertedCurrent = 0;
 int amplification = 0;
 float absoluteErrorCorrection = 0;
 
@@ -94,17 +95,64 @@ void loop() {
 	
 	//Program
 	readCurrent();
+	convertCurrentReadingToMilliamps();
 	displayCurrent();
 
 }
 
+
+
+void readCurrent(){
+
+	current = analogRead(current_sensor);
+	Serial.print("Base reading "); Serial.print(current); Serial.print(", ~"); Serial.print( ( ( current / 1024 ) * voltage_reference * 1000 ) ); Serial.println("mA");
+
+	if( current < mediumBreakpoint ){
+	//Switch to 10x mode if reading is at 118.9mV approximately
+
+		current = analogRead(current_sensor_medium_amp);
+		absoluteErrorCorrection = mediumAmpAbsError;
+		Serial.print("Medium amp reading "); Serial.println(current);
+
+		if( current < highBreakpoint ) {
+		//Switch to 100x mode if reading is at 
+			current = analogRead(current_sensor_high_amp);
+			Serial.print("High amp reading "); Serial.println(current);
+			absoluteErrorCorrection = highAmpAbsError;
+			amplification = getHighAmplification(current);
+
+		} else{
+		//Set amplifiaction for 10x
+			amplification = getMediumAmplification(current);
+		}
+
+	} else {
+
+		amplification = 1;
+		absoluteErrorCorrection = noAmpAbsError;
+
+	}
+
+}
+
+void convertCurrentReadingToMilliamps(){
+
+	//Max Voltage is the ceiling for the chosen amplifier
+	float maxVoltage = voltage_reference / ( resistor_value * amplification);
+
+	//Convert the relative voltage reading to a milliamps readout
+	convertedCurrent = ( current/1024 ) * maxVoltage + absoluteErrorCorrection;
+
+	//Convert from A to mA
+	convertedCurrent *= 1000; 
+	
+}
+
+
 void displayCurrent(){
 
-//Convert to miliamps
-	float maxVoltage = voltage_reference / ( resistor_value * amplification);
-	double convertedCurrent = ( current/1024 ) * maxVoltage;
-	convertedCurrent *= 1000; //Convert from A to mA
-	Serial.print("Output current: "); Serial.print(convertedCurrent); Serial.println(" mA");
+	Serial.print("Display current: "); Serial.print(convertedCurrent); Serial.println(" mA (approximate)");
+	
 	if( convertedCurrent >= 1000 ) {
 		/*
 		int digitOne = convertedCurrent/1000;
@@ -131,36 +179,7 @@ void displayCurrent(){
 
 }
 
-void readCurrent(){
 
-	current = analogRead(current_sensor);
-	Serial.print("Base reading "); Serial.print(current); Serial.print(", ~"); Serial.print( ( ( current / 1024 ) * voltage_reference * 1000 ) ); Serial.println("mA");
-
-	if( current < mediumBreakpoint ){
-	//Switch to 10x mode if reading is at 118.9mV approximately
-
-		current = analogRead(current_sensor_medium_amp);
-		Serial.print("Medium amp reading "); Serial.println(current);
-
-		if( current < highBreakpoint ) {
-		//Switch to 100x mode if reading is at 
-			current = analogRead(current_sensor_high_amp);
-			Serial.print("High amp reading "); Serial.println(current);
-			amplification = getHighAmplification(current);
-
-		} else{
-		//Set amplifiaction for 10x
-			amplification = getMediumAmplification(current);
-		}
-
-	} else {
-
-		amplification = 1;
-		absoluteErrorCorrection = noAmpAbsError;
-
-	}
-
-}
 
 /*
 
@@ -173,13 +192,16 @@ float getMediumAmplification(float current) {
 
 }
 
+
+
 float getHighAmplification(float current) {
 
 	return 50;
 
 }
 
+
+
 ISR(TIMER2_COMPA_vect){
 	display.interruptAction();
 }
-
