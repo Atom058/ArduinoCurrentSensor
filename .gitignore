@@ -6,5 +6,8 @@
 *.skp
 *.stl
 
-//Excel file
+//Binary files
 *.xlsx
+*.jpg
+*.png
+*.jpeg
