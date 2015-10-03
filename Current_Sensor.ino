@@ -57,7 +57,7 @@ const float mediumAmpB = 0.00074321699;
 
 const float highAmplification = 50;
 const float highAmpA = 1.035374060;
-const float highAmpB = 0.001640684133;
+const float highAmpB = -0.001640684133;
 
 //Display
 /* Pins same as the pin number on display, except 1 (E) >> 12
