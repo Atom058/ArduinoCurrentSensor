@@ -40,14 +40,14 @@ const unsigned long refresh_rate = 100; //How often the measurement is taken
 const int mediumBreakpoint = 88;
 const int highBreakpoint = 109;
 
-//Calibration data
-const float noAmpAbsError = -3.0333;
+//Calibration data. Absolute values is in mA
+const float noAmpAbsError = -0.0030333;
 
 const float mediumAmplification = 11;
-const float	mediumAmpAbsError = 3.05;
+const float	mediumAmpAbsError = 0.00305;
 
 const float highAmplification = 50;
-const float	highAmpAbsError = 1.4927;
+const float	highAmpAbsError = 0.0014927;
 
 //Display
 /* Pins same as the pin number on display, except 1 (E) >> 12
@@ -141,7 +141,7 @@ void convertCurrentReadingToMilliamps(){
 	float maxVoltage = voltage_reference / ( resistor_value * amplification);
 
 	//Convert the relative voltage reading to a milliamps readout
-	convertedCurrent = ( current/1024 ) * maxVoltage + absoluteErrorCorrection;
+	convertedCurrent = ( current/1024 ) * maxVoltage - absoluteErrorCorrection;
 
 	//Convert from A to mA
 	convertedCurrent *= 1000; 
@@ -171,7 +171,8 @@ void displayCurrent(){
 			display.write("1.2A");
 		}
 
-	} else if( convertedCurrent == 0 ){
+	} else if( convertedCurrent < 0.2 ){
+    //minimum current allowd is 0.2 mA. Accuracy has probably given up before then
 		display.write("NCu");
 	} else {
 		display.write(convertedCurrent);
