@@ -23,8 +23,10 @@
 		Maxium input voltage: Vref/Gain = 1.218V/50 = 24.36mV
 		Resolution: 0.0237mV
 
-*/
+	FIRST CALIBRATION DATA
+		High Amp absolute error: +1.4927 mA
 
+*/
 
 // Constants
 const float voltage_reference = 1.218; //The supplied reference voltage
@@ -34,12 +36,19 @@ const int current_sensor_medium_amp = 2;
 const int current_sensor_high_amp = 1;
 const unsigned long refresh_rate = 100; //How often the measurement is taken
 
-//For amplification
+//Amplification switching limits
 const int mediumBreakpoint = 88;
 const int highBreakpoint = 109;
 
+//Calibration data
+const float noAmpAbsError = -3.0333;
 
-//Object instantiation
+const float mediumAmplification = 11;
+const float	mediumAmpAbsError = 3.05;
+
+const float highAmplification = 50;
+const float	highAmpAbsError = 1.4927;
+
 //Display
 /* Pins same as the pin number on display, except 1 (E) >> 12
   a:    10
@@ -58,79 +67,98 @@ int digitalPins[numDigits] = { 11, 8, 7 };
 //variables
 float current = 0;
 int amplification = 0;
+float absoluteErrorCorrection = 0;
+
+
 
 void setup() {
-  analogReference(EXTERNAL);
 
-  //Display
-  display.setDigitPins(numDigits, digitalPins);
-  display.setDPPin(3);
+	analogReference(EXTERNAL);
 
-  display.setTimer(2);
-  display.startTimer();
+	//Display
+	display.setDigitPins(numDigits, digitalPins);
+	display.setDPPin(3);
 
-  Serial.begin(9600);
+	display.setTimer(2);
+	display.startTimer();
+
+	Serial.begin(9600);
+
 }
 
 void loop() {
 
-  Serial.println();
-  delay(500);
-  
-  current = analogRead(current_sensor);
-  Serial.print("Base reading "); Serial.print(current); Serial.print(", ~"); Serial.print( ( ( current / 1024 ) * voltage_reference * 1000 ) ); Serial.println("mA");
+	//Debugging
+	Serial.println();
+	delay(500);
+	
+	//Program
+	readCurrent();
+	displayCurrent();
 
-  if( current < mediumBreakpoint ){
-  	//Switch to 10x mode if reading is at 118.9mV approximately
+}
 
-  	current = analogRead(current_sensor_medium_amp);
-    Serial.print("Medium amp reading "); Serial.println(current);
+void displayCurrent(){
 
-  	if( current < highBreakpoint ) {
-  		//Switch to 100x mode if reading is at 
-  		current = analogRead(current_sensor_high_amp);
-      Serial.print("High amp reading "); Serial.println(current);
-  		amplification = getHighAmplification(current);
+//Convert to miliamps
+	float maxVoltage = voltage_reference / ( resistor_value * amplification);
+	double convertedCurrent = ( current/1024 ) * maxVoltage;
+	convertedCurrent *= 1000; //Convert from A to mA
+	Serial.print("Output current: "); Serial.print(convertedCurrent); Serial.println(" mA");
+	if( convertedCurrent >= 1000 ) {
+		/*
+		int digitOne = convertedCurrent/1000;
+		int digitTwo = ( (int)convertedCurrent % 1000 ) / 100;
+		char displayText[] = { '1', '.', '2', 'A', '\0' };
 
-  	} else{
-  		//Set amplifiaction for 10x
-  		amplification = getMediumAmplification(current);
-  	}
+		Serial.println(displayText);*/
+		//Something wacky is going on with the display driver, so I'll bypass this
+		if( convertedCurrent < 1100 ){
+			display.write("1.0A");
+		} else if( convertedCurrent < 1200 ) {
+			display.write("1.1A");
+		} else if( convertedCurrent >= 1023 ) {
+			display.write("Err");
+		} else {
+			display.write("1.2A");
+		}
 
-  } else {
+	} else if( convertedCurrent == 0 ){
+		display.write("NCu");
+	} else {
+		display.write(convertedCurrent);
+	}
 
-  	amplification = 1;
+}
 
-  }
+void readCurrent(){
 
-  //Convert to miliamps
-  float maxVoltage = voltage_reference / ( resistor_value * amplification);
-  double convertedCurrent = ( current/1024 ) * maxVoltage;
-  convertedCurrent *= 1000; //Convert from A to mA
-  Serial.print("Output current: "); Serial.print(convertedCurrent); Serial.println(" mA");
-  if( convertedCurrent >= 1000 ) {
-    /*
-    int digitOne = convertedCurrent/1000;
-    int digitTwo = ( (int)convertedCurrent % 1000 ) / 100;
-    char displayText[] = { '1', '.', '2', 'A', '\0' };
+	current = analogRead(current_sensor);
+	Serial.print("Base reading "); Serial.print(current); Serial.print(", ~"); Serial.print( ( ( current / 1024 ) * voltage_reference * 1000 ) ); Serial.println("mA");
 
-    Serial.println(displayText);*/
-    //Something wacky is going on with the display driver, so I'll bypass this
-    if( convertedCurrent < 1100 ){
-      display.write("1.0A");
-    } else if( convertedCurrent < 1200 ) {
-      display.write("1.1A");
-    } else if( convertedCurrent >= 1023 ) {
-      display.write("Err");
-    } else {
-      display.write("1.2A");
-    }
+	if( current < mediumBreakpoint ){
+	//Switch to 10x mode if reading is at 118.9mV approximately
 
-  } else if( convertedCurrent == 0 ){
-    display.write("NCu");
-  }else {
-    display.write(convertedCurrent);
-  }
+		current = analogRead(current_sensor_medium_amp);
+		Serial.print("Medium amp reading "); Serial.println(current);
+
+		if( current < highBreakpoint ) {
+		//Switch to 100x mode if reading is at 
+			current = analogRead(current_sensor_high_amp);
+			Serial.print("High amp reading "); Serial.println(current);
+			amplification = getHighAmplification(current);
+
+		} else{
+		//Set amplifiaction for 10x
+			amplification = getMediumAmplification(current);
+		}
+
+	} else {
+
+		amplification = 1;
+		absoluteErrorCorrection = noAmpAbsError;
+
+	}
 
 }
 
@@ -152,6 +180,6 @@ float getHighAmplification(float current) {
 }
 
 ISR(TIMER2_COMPA_vect){
-  display.interruptAction();
+	display.interruptAction();
 }
 
