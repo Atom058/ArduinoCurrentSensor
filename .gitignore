@@ -5,3 +5,6 @@
 *.skb
 *.skp
 *.stl
+
+//Excel file
+*.xlsx
