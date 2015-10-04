@@ -7,7 +7,4 @@
 *.stl
 
 //Binary files
-*.xlsx
-*.jpg
-*.png
-*.jpeg
+bin/*
