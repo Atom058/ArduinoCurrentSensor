@@ -193,8 +193,8 @@ void displayCurrent(){
 			display.write("1.2A");
 		}
 
-	} else if( convertedCurrent < 0.2 ){
-    //minimum current allowd is 0.2 mA. Accuracy has probably given up before then
+	} else if( convertedCurrent < 0.1 ){
+    //minimum current allowd is 0.1 mA. Accuracy is declining at these levels, and noise should be avoided.
 		display.write("NCu");
 	} else {
 		display.write(convertedCurrent);
