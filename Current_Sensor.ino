@@ -2,6 +2,8 @@
 
 /* 
 
+	Firmware version 1.1
+
 	Transition calcuations
 
 	Normal mode
@@ -46,6 +48,7 @@ const int highBreakpoint = 109;
 	Each reading is calibrated according to a linera function:
 		y = ax +b, where x = reading and y = target
 
+	Note: These should probably be integrated with each other, but who cares?
 */
 const float noAmpA = 1.08285451;
 const float noAmpB = -0.007717327667;
@@ -94,7 +97,7 @@ void setup() {
 	display.setTimer(2);
 	display.startTimer();
 
-	Serial.begin(9600);
+	//Serial.begin(9600);
 
 }
 
@@ -188,14 +191,14 @@ void displayCurrent(){
 		} else if( convertedCurrent < 1200 ) {
 			display.write("1.1A");
 		} else if( convertedCurrent >= 1023 ) {
-			display.write("Err");
+			display.write("OLi");
 		} else {
 			display.write("1.2A");
 		}
 
-	} else if( convertedCurrent < 0.1 ){
-    //minimum current allowd is 0.1 mA. Accuracy is declining at these levels, and noise should be avoided.
-		display.write("NCu");
+	} else if( convertedCurrent < 0.3 ){
+    //minimum current allowd is 0.3 mA. Accuracy is declining at these levels, and noise should be avoided.
+		display.write("ULi");
 	} else {
 		display.write(convertedCurrent);
 	}
